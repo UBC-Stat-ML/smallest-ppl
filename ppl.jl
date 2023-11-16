@@ -51,4 +51,27 @@ println("        MC: ", posterior(rng, my_first_probabilistic_program, 1_000_000
 
 
 
+### More complex example 
+
+const ys = [1.2, 1.1, 3.3]
+function more_complex_probabilistic_program(rng)
+    n_mix_components = 1 + rand(rng, Poisson(1)) 
+    
+    mixture_proportions = rand(rng, Dirichlet(ones(n_mix_components)))
+    
+    mean_parameters = zeros(n_mix_components)
+    for k in 1:n_mix_components 
+      mean_parameters[k] = rand(rng, Normal())
+    end
+    for i in eachindex(ys)
+        current_mixture_component = rand(rng, Categorical(mixture_proportions))
+        current_mean_param = mean_parameters[current_mixture_component] 
+        observe(ys[i], Normal(current_mean_param, 1.0))
+    end
+    return n_mix_components
+end
+
+println("Mean number of clusters: ", posterior(rng, more_complex_probabilistic_program, 1_000_000))
+
+
 nothing
