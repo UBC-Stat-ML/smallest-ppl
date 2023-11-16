@@ -62,7 +62,7 @@ const coin_flips = [1, 1, 1]
 function my_first_probabilistic_program(rng)
     coin_index = rand(rng, DiscreteUniform(0, 2)) 
     for i in 1:3 
-        observe(coin_flips[i], Bernoulli(coin_index / 3))
+        observe(coin_flips[i], Bernoulli(coin_index / 2))
     end
     return coin_index == 1 ? 1 : 0
 end
@@ -133,11 +133,30 @@ println("        MC: ", posterior(rng, my_first_probabilistic_program, 1_000_000
 
 ## More interesting model example
 
-We can easily implement a mixture model with a random number of mixture components in our toy PPL:
+We can easily implement an HMM in our toy PP (here with fixed params for simplicity)
 
 ```{julia}
-const ys = [1.2, 1.1, 3.3]
-function more_complex_probabilistic_program(rng)
+const data = [1.2, 1.1, 3.3]
+const means = [-1.2, 2.2]
+const transition_matrix = [[0.9, 0.1] [0.1, 0.9]]
+function hmm_probabilistic_program(rng)
+    state = 1 
+    for i in eachindex(data) 
+      transition_prs = transition_matrix[state,:]
+      state = rand(rng, Categorical(transition_prs))
+      observe(data[i], Normal(means[state], 1.0))
+    end
+    return state == 1 ? 1 : 0
+end
+
+println("Posterior probability the last state is 1: ", posterior(rng, hmm_probabilistic_program, 1_000_000))
+```
+
+
+... and a mixture model with a random number of mixture componentsL:
+
+```{julia}
+function gmm_probabilistic_program(rng)
     n_mix_components = 1 + rand(rng, Poisson(1)) 
     
     mixture_proportions = rand(rng, Dirichlet(ones(n_mix_components)))
@@ -146,15 +165,15 @@ function more_complex_probabilistic_program(rng)
     for k in 1:n_mix_components 
       mean_parameters[k] = rand(rng, Normal())
     end
-    for i in eachindex(ys)
+    for i in eachindex(data)
         current_mixture_component = rand(rng, Categorical(mixture_proportions))
         current_mean_param = mean_parameters[current_mixture_component] 
-        observe(ys[i], Normal(current_mean_param, 1.0))
+        observe(data[i], Normal(current_mean_param, 1.0))
     end
     return n_mix_components
 end
 
-println("Mean number of clusters: ", posterior(rng, more_complex_probabilistic_program, 1_000_000))
+println("Posterior mean number of clusters: ", posterior(rng, gmm_probabilistic_program, 1_000_000))
 ```
 
 ## Discussion

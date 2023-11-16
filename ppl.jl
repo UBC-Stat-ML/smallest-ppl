@@ -28,7 +28,7 @@ end
 function my_first_probabilistic_program(rng)
     coin_index = rand(rng, DiscreteUniform(0, 2)) 
     for i in 1:3 
-        observe(1, Bernoulli(coin_index / 3))
+        observe(1, Bernoulli(coin_index / 2))
     end
     return coin_index == 1 ? 1 : 0
 end
